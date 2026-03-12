@@ -130,7 +130,7 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Min Rating</label>
+              <label className="block text-xs text-gray-400 mb-1.5">Min Rating (out of 10)</label>
               <select
                 className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
                 value={rating}
