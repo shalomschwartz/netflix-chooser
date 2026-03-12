@@ -3,7 +3,8 @@ import { MOOD_GENRE_NAMES, WatchmodeGenre, WatchmodeTitle } from '@/lib/watchmod
 
 const NETFLIX_SOURCE_ID = '203'
 const WATCHMODE_BASE = 'https://api.watchmode.com/v1'
-const FETCH_COUNT = 20
+const FETCH_COUNT = 50  // fetch more, filter + sort, return top 20
+const RETURN_COUNT = 20
 
 async function getGenreMap(apiKey: string): Promise<Map<string, number>> {
   const res = await fetch(`${WATCHMODE_BASE}/genres/?apiKey=${apiKey}`, {
@@ -87,16 +88,19 @@ export async function GET(req: NextRequest) {
       .map((r) => r.value)
       .filter((d) => d && !('error' in d))
 
-    const results = details.filter((d) => {
-      if (rating && d.user_rating < parseFloat(rating)) return false
-      if (type === 'movie' && runtime) {
-        const mins = d.runtime_minutes
-        if (runtime === 'short' && mins > 89) return false
-        if (runtime === 'medium' && (mins < 90 || mins > 120)) return false
-        if (runtime === 'long' && mins < 121) return false
-      }
-      return true
-    })
+    const results = details
+      .filter((d) => {
+        if (rating && d.user_rating < parseFloat(rating)) return false
+        if (type === 'movie' && runtime) {
+          const mins = d.runtime_minutes
+          if (runtime === 'short' && mins > 89) return false
+          if (runtime === 'medium' && (mins < 90 || mins > 120)) return false
+          if (runtime === 'long' && mins < 121) return false
+        }
+        return true
+      })
+      .sort((a, b) => (b.user_rating ?? 0) - (a.user_rating ?? 0))
+      .slice(0, RETURN_COUNT)
 
     return NextResponse.json({ results })
   } catch (e) {
