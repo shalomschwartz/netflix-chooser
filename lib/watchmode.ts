@@ -1,18 +1,3 @@
-export const GENRES = [
-  { id: 1, name: 'Action & Adventure' },
-  { id: 3, name: 'Comedy' },
-  { id: 4, name: 'Crime' },
-  { id: 5, name: 'Documentary' },
-  { id: 6, name: 'Drama' },
-  { id: 7, name: 'Family' },
-  { id: 8, name: 'Fantasy' },
-  { id: 11, name: 'Horror' },
-  { id: 14, name: 'Mystery' },
-  { id: 16, name: 'Romance' },
-  { id: 17, name: 'Sci-Fi' },
-  { id: 19, name: 'Thriller' },
-]
-
 export const MOOD_OPTIONS = [
   { value: 'feel-good', label: 'Feel-Good' },
   { value: 'thrilling', label: 'Thrilling' },
@@ -24,16 +9,16 @@ export const MOOD_OPTIONS = [
   { value: 'relaxing', label: 'Relaxing' },
 ]
 
-// Watchmode genre IDs
-export const MOOD_GENRES: Record<string, number[]> = {
-  'feel-good':    [3, 7, 16],       // Comedy, Family, Romance
-  'thrilling':    [1, 19, 4],       // Action, Thriller, Crime
-  'scary':        [11, 14],         // Horror, Mystery
-  'funny':        [3],              // Comedy
-  'romantic':     [16, 6],          // Romance, Drama
-  'adventurous':  [1, 8],           // Action, Fantasy
-  'mind-bending': [17, 14, 19],     // Sci-Fi, Mystery, Thriller
-  'relaxing':     [5, 7],           // Documentary, Family
+// Mood → Watchmode genre names (resolved to real IDs at request time)
+export const MOOD_GENRE_NAMES: Record<string, string[]> = {
+  'feel-good':    ['Comedy', 'Family', 'Romance'],
+  'thrilling':    ['Action & Adventure', 'Thriller', 'Crime'],
+  'scary':        ['Horror', 'Mystery'],
+  'funny':        ['Comedy'],
+  'romantic':     ['Romance', 'Drama'],
+  'adventurous':  ['Action & Adventure', 'Fantasy'],
+  'mind-bending': ['Sci-Fi', 'Mystery', 'Thriller'],
+  'relaxing':     ['Documentary', 'Family'],
 }
 
 export const LANGUAGES = [
@@ -47,6 +32,11 @@ export const LANGUAGES = [
   { code: 'it', name: 'Italian' },
   { code: 'pt', name: 'Portuguese' },
 ]
+
+export interface WatchmodeGenre {
+  id: number
+  name: string
+}
 
 export interface WatchmodeTitle {
   id: number

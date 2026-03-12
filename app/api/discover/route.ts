@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MOOD_GENRES, WatchmodeTitle } from '@/lib/watchmode'
+import { MOOD_GENRE_NAMES, WatchmodeGenre, WatchmodeTitle } from '@/lib/watchmode'
 
 const NETFLIX_SOURCE_ID = '203'
 const WATCHMODE_BASE = 'https://api.watchmode.com/v1'
-const FETCH_COUNT = 12
+const FETCH_COUNT = 20
+
+async function getGenreMap(apiKey: string): Promise<Map<string, number>> {
+  const res = await fetch(`${WATCHMODE_BASE}/genres/?apiKey=${apiKey}`, {
+    next: { revalidate: 86400 },
+  })
+  const genres: WatchmodeGenre[] = await res.json()
+  const map = new Map<string, number>()
+  for (const g of genres ?? []) {
+    map.set(g.name.toLowerCase(), g.id)
+  }
+  return map
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl
   const type = searchParams.get('type') || 'movie'
-  const genre = searchParams.get('genre') || ''
+  const genreId = searchParams.get('genre') || ''
   const mood = searchParams.get('mood') || ''
   const runtime = searchParams.get('runtime') || ''
   const rating = searchParams.get('rating') || ''
@@ -21,11 +33,15 @@ export async function GET(req: NextRequest) {
 
   const types = type === 'tv' ? 'tv_series,tv_miniseries' : 'movie'
 
+  // Resolve genre IDs: explicit dropdown selection, or mood → names → real IDs
   let genreIds: number[] = []
-  if (genre) {
-    genreIds = [parseInt(genre)]
-  } else if (mood && MOOD_GENRES[mood]) {
-    genreIds = MOOD_GENRES[mood]
+  if (genreId) {
+    genreIds = [parseInt(genreId)]
+  } else if (mood && MOOD_GENRE_NAMES[mood]) {
+    const genreMap = await getGenreMap(apiKey)
+    genreIds = MOOD_GENRE_NAMES[mood]
+      .map((name) => genreMap.get(name.toLowerCase()))
+      .filter((id): id is number => id !== undefined)
   }
 
   const params = new URLSearchParams({

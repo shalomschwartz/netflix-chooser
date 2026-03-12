@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { GENRES, MOOD_OPTIONS, LANGUAGES, WatchmodeTitle } from '@/lib/watchmode'
+import { useState, useEffect } from 'react'
+import { MOOD_OPTIONS, LANGUAGES, WatchmodeGenre, WatchmodeTitle } from '@/lib/watchmode'
 import MediaCard from '@/components/MediaCard'
 
 const RATINGS = [
@@ -17,6 +17,7 @@ const RUNTIMES = [
 ]
 
 export default function Home() {
+  const [genres, setGenres] = useState<WatchmodeGenre[]>([])
   const [type, setType] = useState('movie')
   const [genre, setGenre] = useState('')
   const [mood, setMood] = useState('')
@@ -27,6 +28,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetch('/api/genres')
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setGenres(data) })
+  }, [])
 
   async function handleFind() {
     setLoading(true)
@@ -87,7 +94,7 @@ export default function Home() {
                 onChange={(e) => setGenre(e.target.value)}
               >
                 <option value="">Any</option>
-                {GENRES.map((g) => (
+                {genres.map((g) => (
                   <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
               </select>
