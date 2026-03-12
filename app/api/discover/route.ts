@@ -16,13 +16,11 @@ export async function GET(req: NextRequest) {
 
   const apiKey = process.env.WATCHMODE_API_KEY
   if (!apiKey) {
-    return NextResponse.json({ error: 'Missing API key' }, { status: 500 })
+    return NextResponse.json({ error: 'Missing WATCHMODE_API_KEY' }, { status: 500 })
   }
 
-  // Watchmode type strings
   const types = type === 'tv' ? 'tv_series,tv_miniseries' : 'movie'
 
-  // Genre IDs: explicit genre takes priority, otherwise use mood mapping
   let genreIds: number[] = []
   if (genre) {
     genreIds = [parseInt(genre)]
@@ -35,24 +33,32 @@ export async function GET(req: NextRequest) {
     source_ids: NETFLIX_SOURCE_ID,
     types,
     sort_by: 'popularity_desc',
-    regions: 'US',
   })
   if (genreIds.length > 0) params.set('genres', genreIds.join(','))
   if (language) params.set('languages', language)
 
-  try {
-    const listRes = await fetch(`${WATCHMODE_BASE}/list-titles/?${params}`, {
-      next: { revalidate: 3600 },
-    })
-    if (!listRes.ok) {
-      const err = await listRes.json()
-      return NextResponse.json({ error: err }, { status: listRes.status })
-    }
-    const listData = await listRes.json()
-    const titles: { id: number }[] = (listData.titles || []).slice(0, FETCH_COUNT)
+  const listUrl = `${WATCHMODE_BASE}/list-titles/?${params}`
 
-    // Fetch details in parallel
-    const details: WatchmodeTitle[] = await Promise.all(
+  try {
+    const listRes = await fetch(listUrl, { next: { revalidate: 3600 } })
+    const listData = await listRes.json()
+
+    if (!listRes.ok || listData.error) {
+      console.error('Watchmode list-titles error:', JSON.stringify(listData))
+      return NextResponse.json(
+        { error: listData.error ?? `Watchmode returned ${listRes.status}` },
+        { status: listRes.status || 500 }
+      )
+    }
+
+    const titles: { id: number }[] = (listData.titles ?? []).slice(0, FETCH_COUNT)
+
+    if (titles.length === 0) {
+      return NextResponse.json({ results: [] })
+    }
+
+    // Fetch details in parallel; use allSettled so one failure doesn't kill all
+    const settled = await Promise.allSettled(
       titles.map((t) =>
         fetch(`${WATCHMODE_BASE}/title/${t.id}/details/?apiKey=${apiKey}`, {
           next: { revalidate: 3600 },
@@ -60,7 +66,11 @@ export async function GET(req: NextRequest) {
       )
     )
 
-    // Client-side runtime + rating filter
+    const details: WatchmodeTitle[] = settled
+      .filter((r): r is PromiseFulfilledResult<WatchmodeTitle> => r.status === 'fulfilled')
+      .map((r) => r.value)
+      .filter((d) => d && !('error' in d))
+
     const results = details.filter((d) => {
       if (rating && d.user_rating < parseFloat(rating)) return false
       if (type === 'movie' && runtime) {
@@ -73,7 +83,8 @@ export async function GET(req: NextRequest) {
     })
 
     return NextResponse.json({ results })
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 })
+  } catch (e) {
+    console.error('Discover route error:', e)
+    return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }

@@ -26,10 +26,12 @@ export default function Home() {
   const [results, setResults] = useState<WatchmodeTitle[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
+  const [error, setError] = useState('')
 
   async function handleFind() {
     setLoading(true)
     setSearched(true)
+    setError('')
     const params = new URLSearchParams({ type })
     if (genre) params.set('genre', genre)
     if (mood) params.set('mood', mood)
@@ -37,9 +39,19 @@ export default function Home() {
     if (rating) params.set('rating', rating)
     if (language) params.set('language', language)
 
-    const res = await fetch(`/api/discover?${params}`)
-    const data = await res.json()
-    setResults(data.results || [])
+    try {
+      const res = await fetch(`/api/discover?${params}`)
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        setError(data.error || 'Something went wrong')
+        setResults([])
+      } else {
+        setResults(data.results || [])
+      }
+    } catch {
+      setError('Failed to reach the server')
+      setResults([])
+    }
     setLoading(false)
   }
 
@@ -153,7 +165,14 @@ export default function Home() {
           <div className="text-center text-gray-400 py-20 text-lg">Searching Netflix...</div>
         )}
 
-        {!loading && searched && results.length === 0 && (
+        {!loading && error && (
+          <div className="text-center text-red-400 py-20">
+            <p className="text-lg mb-2">Error</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && searched && results.length === 0 && (
           <div className="text-center text-gray-400 py-20">
             <p className="text-lg mb-2">No results found</p>
             <p className="text-sm">Try loosening your filters</p>
