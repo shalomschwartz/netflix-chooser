@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MOOD_GENRE_NAMES, WatchmodeGenre, WatchmodeTitle } from '@/lib/watchmode'
+// MOOD_GENRE_NAMES maps mood → single genre name to avoid Watchmode AND/OR ambiguity
 
 const NETFLIX_SOURCE_ID = '203'
 const WATCHMODE_BASE = 'https://api.watchmode.com/v1'
@@ -40,9 +41,8 @@ export async function GET(req: NextRequest) {
     genreIds = [parseInt(genreId)]
   } else if (mood && MOOD_GENRE_NAMES[mood]) {
     const genreMap = await getGenreMap(apiKey)
-    genreIds = MOOD_GENRE_NAMES[mood]
-      .map((name) => genreMap.get(name.toLowerCase()))
-      .filter((id): id is number => id !== undefined)
+    const id = genreMap.get(MOOD_GENRE_NAMES[mood].toLowerCase())
+    if (id !== undefined) genreIds = [id]
   }
 
   const params = new URLSearchParams({

@@ -9,16 +9,16 @@ export const MOOD_OPTIONS = [
   { value: 'relaxing', label: 'Relaxing' },
 ]
 
-// Mood → Watchmode genre names (resolved to real IDs at request time)
-export const MOOD_GENRE_NAMES: Record<string, string[]> = {
-  'feel-good':    ['Comedy', 'Family', 'Romance'],
-  'thrilling':    ['Action & Adventure', 'Thriller', 'Crime'],
-  'scary':        ['Horror', 'Mystery'],
-  'funny':        ['Comedy'],
-  'romantic':     ['Romance', 'Drama'],
-  'adventurous':  ['Action & Adventure', 'Fantasy'],
-  'mind-bending': ['Sci-Fi', 'Mystery', 'Thriller'],
-  'relaxing':     ['Documentary', 'Family'],
+// Mood → single primary Watchmode genre name (one ID avoids AND/OR ambiguity)
+export const MOOD_GENRE_NAMES: Record<string, string> = {
+  'feel-good':    'Comedy',
+  'thrilling':    'Action & Adventure',
+  'scary':        'Horror',
+  'funny':        'Comedy',
+  'romantic':     'Romance',
+  'adventurous':  'Action & Adventure',
+  'mind-bending': 'Sci-Fi',
+  'relaxing':     'Documentary',
 }
 
 export const LANGUAGES = [
